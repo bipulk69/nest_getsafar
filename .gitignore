@@ -3,6 +3,10 @@
 /node_modules
 /build
 
+# Yarn
+.yarn
+.pnp.*
+
 # TypeScript build cache
 *.tsbuildinfo
 
