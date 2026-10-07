@@ -14,13 +14,17 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     private pool: pg.Pool;
 
     constructor(private readonly configService: ConfigService) {
+        const host = this.configService.get<string>('database.host');
+        const isRemoteDb = !!host && !host.includes('localhost') && !host.includes('127.0.0.1');
+
         this.pool = new Pool({
-            host: this.configService.get<string>('database.host', 'localhost'),
-            port: this.configService.get<number>('database.port', 5432),
-            user: this.configService.get<string>('database.user', 'postgres'),
-            password: this.configService.get<string>('database.password', 'postgrespassword'),
-            database: this.configService.get<string>('database.name', 'getsafar_db'),
-            max: this.configService.get<number>('database.poolMax', 10),
+            host,
+            port: this.configService.get<number>('database.port'),
+            user: this.configService.get<string>('database.user'),
+            password: this.configService.get<string>('database.password'),
+            database: this.configService.get<string>('database.name'),
+            max: this.configService.get<number>('database.poolMax'),
+            ssl: isRemoteDb ? { rejectUnauthorized: false } : false,
         });
     }
 
