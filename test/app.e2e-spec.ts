@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
+import { DatabaseService } from './../src/database/database.service.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -13,32 +14,37 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api/v1');
     await app.init();
+
+    const db = app.get(DatabaseService);
+    await db.query('DELETE FROM users');
   });
 
-  it('/ (GET)', () => {
+  it('/api/v1 (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/v1')
       .expect(200)
       .expect('Hello World!');
   });
 
-  it('POST /createUser should create a user', async () => {
+  it('POST /api/v1/auth/creatUser should create a user', async () => {
     const payload = {
       name: 'John Doe',
-      email: 'john@example.com',
+      email: `john-${Date.now()}@example.com`,
     };
 
     const response = await request(app.getHttpServer())
-      .post('/createUser')
+      .post('/api/v1/auth/creatUser')
       .send(payload)
       .expect(201);
 
-    expect(response.body).toMatchObject({
+    expect(response.body.message).toBe('User created successfully');
+    expect(response.body.user).toMatchObject({
       name: payload.name,
       email: payload.email,
     });
-    expect(response.body.id).toBeTruthy();
+    expect(response.body.user.id).toBeTruthy();
   });
 
   afterEach(async () => {
