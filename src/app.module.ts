@@ -6,6 +6,7 @@ import { databaseConfig } from './config/database.config.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { AuthModule } from './auth/auth.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -19,6 +20,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
     // 2. Initializes PostgreSQL pool and runs schema.sql
     DatabaseModule,
+    AuthModule,
 
     ObserveModule.forRoot({
       appKey: 'YOUR_APP_KEY',

@@ -23,6 +23,24 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
+  it('POST /createUser should create a user', async () => {
+    const payload = {
+      name: 'John Doe',
+      email: 'john@example.com',
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/createUser')
+      .send(payload)
+      .expect(201);
+
+    expect(response.body).toMatchObject({
+      name: payload.name,
+      email: payload.email,
+    });
+    expect(response.body.id).toBeTruthy();
+  });
+
   afterEach(async () => {
     await app.close();
   });
