@@ -28,6 +28,13 @@ export class AuthService {
         }
 
         try {
+            const existingUser = await this.databaseService.query(
+                `SELECT id FROM users WHERE email = $1`, [email]
+            )
+            if(existingUser){
+                throw new ConflictException('Email already existis')
+            }
+
             const result = await this.databaseService.query<CreatedUserRow>(
                 `INSERT INTO users (name, email)
                 VALUES ($1, $2)
