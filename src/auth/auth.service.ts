@@ -208,9 +208,19 @@ export class AuthService {
 
         const token = this.jwtService.sign({
             sub: user.id,
-            name: user.name,
+            name: profile.name,
             email: user.email,
         });
+
+        const updatedUser = await this.databaseService.query<GoogleUserRow>(
+            `UPDATE users
+            SET name = $1, token = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING id, name, email`,
+            [profile.name, token, user.id],
+        );
+
+        user = updatedUser.rows[0];
 
         return {
             message: 'Google sign-in successful',

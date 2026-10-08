@@ -1,8 +1,8 @@
 import { ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { DatabaseService } from '../database/database.service.js';
-import { AuthService } from './auth.service.js';
-import { GoogleProfile } from './interfaces/google-profile.interface.js';
+import { DatabaseService } from '../src/database/database.service.js';
+import { AuthService } from '../src/auth/auth.service.js';
+import { GoogleProfile } from '../src/auth/interfaces/google-profile.interface.js';
 
 describe('AuthService Google sign-in', () => {
   const profile: GoogleProfile = {
@@ -25,13 +25,22 @@ describe('AuthService Google sign-in', () => {
   });
 
   it('reuses an account already linked to the Google ID', async () => {
-    databaseService.query.mockResolvedValueOnce({
-      rows: [{ id: 12, name: profile.name, email: profile.email }],
-    });
+    databaseService.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 12, name: 'Old Name', email: profile.email }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ id: 12, name: profile.name, email: profile.email }],
+      });
 
     const result = await authService.googleLogin(profile);
 
-    expect(databaseService.query).toHaveBeenCalledTimes(1);
+    expect(databaseService.query).toHaveBeenCalledTimes(2);
+    expect(databaseService.query.mock.calls[1][1]).toEqual([
+      profile.name,
+      'app-jwt-token',
+      12,
+    ]);
     expect(jwtService.sign).toHaveBeenCalledWith({
       sub: 12,
       name: profile.name,
@@ -50,15 +59,23 @@ describe('AuthService Google sign-in', () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
         rows: [{ id: 13, name: profile.name, email: profile.email }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ id: 13, name: profile.name, email: profile.email }],
       });
 
     const result = await authService.googleLogin(profile);
 
-    expect(databaseService.query).toHaveBeenCalledTimes(3);
+    expect(databaseService.query).toHaveBeenCalledTimes(4);
     expect(databaseService.query.mock.calls[2][1]).toEqual([
       profile.name,
       profile.email,
       profile.googleId,
+    ]);
+    expect(databaseService.query.mock.calls[3][1]).toEqual([
+      profile.name,
+      'app-jwt-token',
+      13,
     ]);
     expect(result).toMatchObject({
       token: 'app-jwt-token',
