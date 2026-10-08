@@ -29,9 +29,11 @@ describe('AppController (e2e)', () => {
   });
 
   it('POST /api/v1/auth/creatUser should create a user', async () => {
+    const password = 'StrongPassword@123';
     const payload = {
       name: 'John Doe',
       email: `john-${Date.now()}@example.com`,
+      password,
     };
 
     const response = await request(app.getHttpServer())
@@ -47,6 +49,27 @@ describe('AppController (e2e)', () => {
       email: payload.email,
     });
     expect(response.body.user.id).toBeTruthy();
+
+    const dbUser = await app.get(DatabaseService).query(
+      'SELECT password FROM users WHERE email = $1',
+      [payload.email],
+    );
+
+    expect(dbUser.rows[0].password).not.toBe(password);
+    expect(dbUser.rows[0].password).toContain(':');
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/userLogin')
+      .send({ email: payload.email, password })
+      .expect(201);
+
+    expect(loginResponse.body.message).toBe('Login successful');
+    expect(loginResponse.body.token).toBeTruthy();
+    expect(loginResponse.body.user).toMatchObject({
+      id: response.body.user.id,
+      name: payload.name,
+      email: payload.email,
+    });
   });
 
   afterEach(async () => {
