@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255),
-  google_id VARCHAR(255),
+    password VARCHAR(255),
+    google_id VARCHAR(255),
     token VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -19,3 +19,28 @@ ALTER TABLE users ALTER COLUMN google_id DROP NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique
   ON users (google_id)
   WHERE google_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS plans (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    request JSONB NOT NULL,
+    current_itinerary JSONB,
+    status VARCHAR(30) NOT NULL DEFAULT 'requested',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS plan_history (
+    id SERIAL PRIMARY KEY,
+    plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL,
+    snapshot JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (plan_id, version)
+);
+
+CREATE INDEX IF NOT EXISTS plans_user_id_created_at_idx
+    ON plans (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS plan_history_plan_id_created_at_idx
+    ON plan_history (plan_id, created_at DESC);
