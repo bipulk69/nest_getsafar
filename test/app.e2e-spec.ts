@@ -40,6 +40,8 @@ describe('AppController (e2e)', () => {
       .expect(201);
 
     expect(response.body.message).toBe('User created successfully');
+    expect(response.body.token).toBeTruthy();
+    expect(response.body.expiresIn).toBe('24h');
     expect(response.body.user).toMatchObject({
       name: payload.name,
       email: payload.email,
