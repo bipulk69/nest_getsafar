@@ -84,31 +84,41 @@ export class AuthService {
 
             const hashedPassword = this.hashPassword(password);
 
-            const token = this.jwtService.sign({
-                email,
-                name,
-            });
-
             const result = await this.databaseService.query<CreatedUserRow>(
                 `INSERT INTO users (name, email, password, token)
-                VALUES ($1, $2, $3, $4)
-                RETURNING id, name, email, token, created_at, updated_at`,
-                [name, email, hashedPassword, token],
+                VALUES ($1, $2, $3, NULL)
+                RETURNING id, name, email, created_at, updated_at`,
+                [name, email, hashedPassword],
             );
 
             const user = result.rows[0];
+            const token = this.jwtService.sign({
+                sub: user.id,
+                email: user.email,
+                name: user.name,
+            });
+
+            const tokenResult = await this.databaseService.query<CreatedUserRow>(
+                `UPDATE users
+                SET token = $1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $2
+                RETURNING id, name, email, token, created_at, updated_at`,
+                [token, user.id],
+            );
+
+            const savedUser = tokenResult.rows[0];
 
             return {
                 message: 'User created successfully',
-                token: user.token,
+                token: savedUser.token,
                 expiresIn: '24h',
                 user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    token: user.token,
-                    createdAt: user.created_at,
-                    updatedAt: user.updated_at,
+                    id: savedUser.id,
+                    name: savedUser.name,
+                    email: savedUser.email,
+                    token: savedUser.token,
+                    createdAt: savedUser.created_at,
+                    updatedAt: savedUser.updated_at,
                 },
             };
         } catch (error: any) {

@@ -44,3 +44,23 @@ CREATE INDEX IF NOT EXISTS plans_user_id_created_at_idx
 
 CREATE INDEX IF NOT EXISTS plan_history_plan_id_created_at_idx
     ON plan_history (plan_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS user_locations (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL
+        CHECK (latitude >= -90 AND latitude <= 90),
+    longitude DOUBLE PRECISION NOT NULL
+        CHECK (longitude >= -180 AND longitude <= 180),
+    city VARCHAR(120),
+    state VARCHAR(120),
+    country VARCHAR(120),
+    accuracy_m DOUBLE PRECISION
+        CHECK (accuracy_m IS NULL OR accuracy_m >= 0),
+    observed_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS city VARCHAR(120);
+ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS state VARCHAR(120);
+ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS country VARCHAR(120);
